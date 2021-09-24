@@ -15,6 +15,7 @@ import reactor.netty.tcp.SslProvider;
 
 import java.security.cert.CertificateException;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,7 +28,7 @@ public class HttpClientConnectionTest {
 					Http2SslContextSpec.forServer(ssc.certificate(), ssc.privateKey())
 					: Http11SslContextSpec.forServer(ssc.certificate(), ssc.privateKey());
 
-			final DisposableServer server = HttpServer.create()
+			return HttpServer.create()
 					.protocol(HttpProtocol.H2, HttpProtocol.HTTP11)
 					.secure(spec -> spec.sslContext(sslContext))
 					.port(0)
@@ -51,7 +52,6 @@ public class HttpClientConnectionTest {
 								}
 							}))
 					.wiretap(true).bindNow();
-			return server;
 		} catch (CertificateException e) {
 			throw new RuntimeException(e);
 		}
@@ -94,11 +94,11 @@ public class HttpClientConnectionTest {
 	}
 
 	private String mkHttpCall(HttpClient client, DisposableServer server) {
-		return client.get()
+		return Objects.requireNonNull(client.get()
 				.uri(String.format("https://localhost:%s/echoConn", server.port()))
 				.responseContent()
 				.aggregate()
-				.asString().block();
+				.asString().block());
 	}
 
 	private void sleep(final long timeInMillis) {
